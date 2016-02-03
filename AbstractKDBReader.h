@@ -21,6 +21,8 @@ class AbstractKDBReader {
         bool open(const string& filename);
         // check signature
         bool checkSignature();
+        // parse header
+        virtual bool parseHeader() = 0;
 
     protected:
         bool checkSig1(uint32_t val);

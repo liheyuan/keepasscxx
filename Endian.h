@@ -33,6 +33,12 @@ class Endian {
                 ((val >>  8) & 0x0000ff00) |
                 ((val >> 24) & 0x000000ff);
         }
+
+        static uint64_t changeEndianness(uint64_t val) {
+            val = ((val << 8) & 0xFF00FF00FF00FF00ULL ) | ((val >> 8) & 0x00FF00FF00FF00FFULL );
+            val = ((val << 16) & 0xFFFF0000FFFF0000ULL ) | ((val >> 16) & 0x0000FFFF0000FFFFULL );
+            return (val << 32) | (val >> 32);
+        }
     
         static uint16_t convToLittle(uint16_t val) {
             if(isBigEndianness()) {
@@ -47,7 +53,13 @@ class Endian {
             }
             return val;
         }
-    
+
+        static uint32_t convToLittle(uint64_t val) {
+            if(isBigEndianness()) {
+                val = changeEndianness(val);
+            }
+            return val;
+        }
         static uint16_t convToBig(uint16_t val) {
             if(isLittleEndianness()) {
                 val = changeEndianness(val);
@@ -56,6 +68,13 @@ class Endian {
         }
     
         static uint32_t convToBig(uint32_t val) {
+            if(isLittleEndianness()) {
+                val = changeEndianness(val);
+            }
+            return val;
+        }
+
+        static uint32_t convToBig(uint64_t val) {
             if(isLittleEndianness()) {
                 val = changeEndianness(val);
             }

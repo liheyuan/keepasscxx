@@ -15,7 +15,9 @@ class Crypto {
         static bool sha256Hex(const string &input, string& output);
         static bool sha256ByFile(const string& fileName, vector<char>& output);
         static bool sha256HexByFile(const string& fileName, string& output);
-        // aes
+        // aes ecb inplace encrypt (size must be x*aes_block_ size)
+        static bool aesECBEncrypt(const vector<char>& key, const vector<char>& input, vector<char>& output);
+        static bool aesECBEncryptHex(const string& key, const string& input, string& output);
 
         // util
         static bool stringToVec(const string& str, vector<char>& vec);

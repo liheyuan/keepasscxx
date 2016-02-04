@@ -114,3 +114,130 @@ bool Crypto::aesECBEncryptHex(const string& key, const string& input, string& ou
     // convert to hex
     return digestToHex(outputVec, output);
 }
+
+bool Crypto::aesCBCEncrypt(const vector<char>& key, const vector<char>& iv, const vector<char>& input, vector<char>& output) {
+    // check key length
+    size_t keyLen = key.size();
+    if(keyLen != 16 && keyLen != 24 && keyLen != 32) {
+        return false;
+    }
+    // check iv length
+    if(iv.size() != 16) {
+        return false;
+    }
+    // ecb inplace encrypt
+    const byte* pKey = reinterpret_cast<const byte*>(&key[0]);
+    const byte* pIv = reinterpret_cast<const byte*>(&iv[0]);
+    CryptoPP::CBC_Mode< CryptoPP::AES >::Encryption e(pKey, key.size() * sizeof(char), pIv);
+    vector<char> tmpVec(input.begin(), input.end());
+    byte* pTmp = reinterpret_cast<byte*>(&tmpVec[0]);
+    e.ProcessData(pTmp, pTmp, sizeof(char) * tmpVec.size());
+    output.assign(tmpVec.begin(), tmpVec.end());
+    return true;
+}
+
+bool Crypto::aesCBCEncrypt(const string& key, const string& iv, const string& input, vector<char>& outputVec) {
+    // convert key to vec
+    vector<char> keyVec;
+    if(!stringToVec(key, keyVec)) {
+        return false;
+    }
+    // convert input to vec
+    vector<char> inputVec;
+    if(!stringToVec(input, inputVec)) {
+        return false;
+    }
+    // convert iv to vec
+    vector<char> ivVec;
+    if(!stringToVec(iv, ivVec)) {
+        return false;
+    }
+    // aesCBCEncrypt
+    return aesCBCEncrypt(keyVec, ivVec, inputVec, outputVec);
+}
+
+bool Crypto::aesCBCEncryptHex(const string& key, const string& iv, const string& input, string& output) {
+    // convert key to vec
+    vector<char> keyVec;
+    if(!stringToVec(key, keyVec)) {
+        return false;
+    }
+    // convert input to vec
+    vector<char> inputVec;
+    if(!stringToVec(input, inputVec)) {
+        return false;
+    }
+    // convert iv to vec
+    vector<char> ivVec;
+    if(!stringToVec(iv, ivVec)) {
+        return false;
+    }
+    // aesCBCEncrypt
+    vector<char> outputVec;
+    if(!aesCBCEncrypt(keyVec, ivVec, inputVec, outputVec)) {
+        return false;
+    }
+    // convert to hex
+    return digestToHex(outputVec, output);
+}
+
+bool Crypto::aesCBCDecrypt(const vector<char>& key, const vector<char>& iv, const vector<char>& input, vector<char>& output) {
+    // check key length
+    size_t keyLen = key.size();
+    if(keyLen != 16 && keyLen != 24 && keyLen != 32) {
+        return false;
+    }
+    // check iv length
+    if(iv.size() != 16) {
+        return false;
+    }
+    // ecb inplace encrypt
+    const byte* pKey = reinterpret_cast<const byte*>(&key[0]);
+    const byte* pIv = reinterpret_cast<const byte*>(&iv[0]);
+    CryptoPP::CBC_Mode< CryptoPP::AES >::Decryption d(pKey, key.size() * sizeof(char), pIv);
+    vector<char> tmpVec(input.begin(), input.end());
+    byte* pTmp = reinterpret_cast<byte*>(&tmpVec[0]);
+    d.ProcessData(pTmp, pTmp, sizeof(char) * tmpVec.size());
+    output.assign(tmpVec.begin(), tmpVec.end());
+    return true;
+}
+
+bool Crypto::aesCBCDecrypt(const string& key, const string& iv, const vector<char>& inputVec, vector<char>& outputVec) {
+    // convert key to vec
+    vector<char> keyVec;
+    if(!stringToVec(key, keyVec)) {
+        return false;
+    }
+    // convert iv to vec
+    vector<char> ivVec;
+    if(!stringToVec(iv, ivVec)) {
+        return false;
+    }
+    // aesCBCDecrypt
+    return aesCBCDecrypt(keyVec, ivVec, inputVec, outputVec);
+}
+
+bool Crypto::aesCBCDecryptHex(const string& key, const string& iv, const string& input, string& output) {
+    // convert key to vec
+    vector<char> keyVec;
+    if(!stringToVec(key, keyVec)) {
+        return false;
+    }
+    // convert input to vec
+    vector<char> inputVec;
+    if(!stringToVec(input, inputVec)) {
+        return false;
+    }
+    // convert iv to vec
+    vector<char> ivVec;
+    if(!stringToVec(iv, ivVec)) {
+        return false;
+    }
+    // aesCBCDecrypt
+    vector<char> outputVec;
+    if(!aesCBCDecrypt(keyVec, ivVec, inputVec, outputVec)) {
+        return false;
+    }
+    // convert to hex
+    return digestToHex(outputVec, output);
+}

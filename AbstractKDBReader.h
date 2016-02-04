@@ -14,7 +14,7 @@ const uint32_t KDB_SIG1 = 0x9AA2D903;
 class AbstractKDBReader {
     public:
         AbstractKDBReader()
-        :mFileName(""), mFile(NULL){
+        :mFileName(""), mFile(NULL), mHeaderLength(0){
         }
 
         virtual ~AbstractKDBReader();
@@ -37,6 +37,7 @@ class AbstractKDBReader {
     protected:
        string mFileName; 
        FILE* mFile;
+       uint32_t mHeaderLength;
 };
 
 #endif

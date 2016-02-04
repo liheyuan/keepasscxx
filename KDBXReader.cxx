@@ -44,10 +44,6 @@ bool KDBXReader::parseHeader() {
             return false;
         }
         len = Endian::convToLittle(len);
-        // Check header end
-        if(type == KDBX_HEADER_END_OF_HEADER) {
-            break;
-        }
         // Check type contains
         if(mHeaderMap.count(type) == 0) {
             // ignore unknown type
@@ -63,7 +59,13 @@ bool KDBXReader::parseHeader() {
             }
             data.push_back(tmp);
         }
-        printf("%d %d\n", type, len);
+
+        // Check if header end
+        if(type == KDBX_HEADER_END_OF_HEADER) {
+            // record position and break
+            mHeaderLength = ftell(mFile);
+            break;
+        }
     }
     return true;
 }

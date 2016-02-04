@@ -1,6 +1,7 @@
 #include "KDBXReader.h"
 #include "Endian.h"
 #include "ConvTool.h"
+#include "Crypto.h"
 
 KDBXReader::KDBXReader()
 :AbstractKDBReader() {
@@ -103,4 +104,54 @@ uint64_t KDBXReader::getTransformRounds() {
         return 0;
     }
     return Endian::convToLittle(rounds);
+}
+
+vector<char> KDBXReader::getTransformSeed() {
+    // check map data contains
+    HeaderMap::iterator itr = mHeaderMap.find(KDBX_HEADER_TRANSFORM_SEED);
+    if(itr == mHeaderMap.end()) {
+        return vector<char>();
+    }
+    // return copy of seed directly
+    return itr->second;
+}
+
+
+bool KDBXReader::generateMasterKey(const string& password, const string& fileName, vector<char>& outputVec) {
+    // first get composite key
+    vector<char> compositeKeyVec;
+    if(!generateCompositeKey(password, fileName, compositeKeyVec)) {
+        return false;
+    }
+    // then get transform key using aes for rounds
+    uint64_t tRounds = getTransformRounds();
+    vector<char> tSeed = getTransformSeed();
+    vector<char> tmpVec; // will reuse
+    vector<char> transformVec;
+    if(!Crypto::aesECBEncrypt(tSeed, compositeKeyVec, tmpVec, tRounds)) {
+        return false;
+    }
+    if(!Crypto::sha256(tmpVec, transformVec)) {
+        return true;
+    }
+    // sha256(masterseed + transform_key)
+    vector<char> masterSeed = getMasterSeed(); 
+    tmpVec.clear();
+    if(!masterSeed.empty()) {
+        tmpVec.assign(masterSeed.begin(), masterSeed.end());
+    }
+    if(!transformVec.empty()) {
+        tmpVec.insert(tmpVec.end(), transformVec.begin(), transformVec.end());
+    }
+    return Crypto::sha256(tmpVec, outputVec);
+}
+
+vector<char> KDBXReader::getMasterSeed() {
+    // check map data contains
+    HeaderMap::iterator itr = mHeaderMap.find(KDBX_HEADER_MASTER_SEED);
+    if(itr == mHeaderMap.end()) {
+        return vector<char>();
+    }
+    // return copy of seed directly
+    return itr->second;
 }

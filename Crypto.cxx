@@ -78,7 +78,7 @@ bool Crypto::sha256HexByFile(const string& fileName, string& output) {
     return digestToHex(outputVec, output);
 }
 
-bool Crypto::aesECBEncrypt(const vector<char>& key, const vector<char>& input, vector<char>& output) {
+bool Crypto::aesECBEncrypt(const vector<char>& key, const vector<char>& input, vector<char>& output, uint64_t rounds) {
     // check key length
     size_t keyLen = key.size();
     if(keyLen != 16 && keyLen != 24 && keyLen != 32) {
@@ -88,12 +88,14 @@ bool Crypto::aesECBEncrypt(const vector<char>& key, const vector<char>& input, v
     CryptoPP::ECB_Mode< CryptoPP::AES >::Encryption e(reinterpret_cast<const byte*>(&key[0]), key.size() * sizeof(char));
     vector<char> tmpVec(input.begin(), input.end());
     byte* ptr = reinterpret_cast<byte*>(&tmpVec[0]);
-    e.ProcessData(ptr, ptr, sizeof(char) * tmpVec.size());
+    for(size_t i=0; i<rounds; i++) {
+        e.ProcessData(ptr, ptr, sizeof(char) * tmpVec.size());
+    }
     output.assign(tmpVec.begin(), tmpVec.end());
     return true;
 }
 
-bool Crypto::aesECBEncryptHex(const string& key, const string& input, string& output) {
+bool Crypto::aesECBEncryptHex(const string& key, const string& input, string& output, uint64_t rounds) {
     // convert key to vec
     vector<char> keyVec;
     if(!stringToVec(key, keyVec)) {
@@ -106,7 +108,7 @@ bool Crypto::aesECBEncryptHex(const string& key, const string& input, string& ou
     }
     // aesECBEncrypt
     vector<char> outputVec;
-    if(!aesECBEncrypt(keyVec, inputVec, outputVec)) {
+    if(!aesECBEncrypt(keyVec, inputVec, outputVec, rounds)) {
         return false;
     }
     // convert to hex

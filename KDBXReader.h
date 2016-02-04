@@ -41,8 +41,15 @@ class KDBXReader: public AbstractKDBReader {
 
         // true: gzip, false: none 
         KDBXCompression getCompression();
-        // get round
+        // get transform round
         uint64_t getTransformRounds();
+        // get transform seed
+        vector<char> getTransformSeed();
+        // get master seed(random every save)
+        vector<char> getMasterSeed();
+
+        // generate master key
+        bool generateMasterKey(const string& password, const string& fileName, vector<char>& outputVec);
 
     protected:
         typedef map<char, vector<char> > HeaderMap; 

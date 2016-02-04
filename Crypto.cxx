@@ -14,6 +14,16 @@ bool Crypto::sha256(const vector<char> &input, vector<char>& output) {
     return true;
 }
 
+bool Crypto::sha256(const string &input, vector<char>& outputVec) {
+    // make vec input
+    vector<char> inputVec;
+    if(!stringToVec(input, inputVec)) {
+        return false;
+    }
+    // sha256(vec)
+    return sha256(inputVec, outputVec);
+}
+
 bool Crypto::sha256Hex(const string &input, string& output) {
     // make vec input
     vector<char> inputVec;

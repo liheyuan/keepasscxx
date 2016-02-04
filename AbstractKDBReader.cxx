@@ -1,5 +1,6 @@
 #include "AbstractKDBReader.h"
 #include "Endian.h"
+#include "Crypto.h"
 
 AbstractKDBReader::~AbstractKDBReader() {
     if(mFile) {
@@ -46,4 +47,47 @@ bool AbstractKDBReader::checkSignature() {
 
 bool AbstractKDBReader::checkSig1(uint32_t val) {
     return val == KDB_SIG1;
+}
+
+bool AbstractKDBReader::generateCompositeKey(const string& password, const string& fileName, vector<char>& outputVec) {
+    // first hash the password
+    vector<char> aSha256Vec;
+    if(!password.empty()) {
+        if(!Crypto::sha256(password, aSha256Vec)) {
+            return false;
+        }
+    }
+
+    // than hash fileName if not empty
+    vector<char> bSha256Vec;
+    if(!fileName.empty()) {
+        if(!Crypto::sha256ByFile(fileName, bSha256Vec)) {
+            return false;
+        }
+    }
+
+    // concat a, b(if not empty)
+    vector<char> tmpVec;
+    tmpVec.assign(aSha256Vec.begin(), aSha256Vec.end());
+    if(!bSha256Vec.empty()) {
+        tmpVec.insert(tmpVec.end(), bSha256Vec.begin(), bSha256Vec.end());
+    }
+
+    // and final sha256
+    if(!Crypto::sha256(tmpVec, outputVec)) {
+        return false;
+    }
+
+    return true;
+}
+
+bool AbstractKDBReader::generateCompositeKeyHex(const string& password, const string& fileName, string& outputStr) {
+    vector<char> outputVec;
+    if(!generateCompositeKey(password, fileName, outputVec)) {
+        return false;
+    }
+    if(!Crypto::digestToHex(outputVec, outputStr)) {
+        return false;
+    }
+    return true;
 }

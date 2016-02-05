@@ -2,6 +2,7 @@
 #include "Endian.h"
 #include "ConvTool.h"
 #include "Crypto.h"
+#include "Compress.h"
 
 KDBXReader::KDBXReader()
 :AbstractKDBReader() {
@@ -156,4 +157,111 @@ vector<char> KDBXReader::getMasterSeed() {
     }
     // return copy of seed directly
     return itr->second;
+}
+
+vector<char> KDBXReader::getEncryptionIV() {
+    // check map data contains
+    HeaderMap::iterator itr = mHeaderMap.find(KDBX_HEADER_ENCRYPTION_IV);
+    if(itr == mHeaderMap.end()) {
+        return vector<char>();
+    }
+    // return copy of seed directly
+    return itr->second;
+}
+
+vector<char> KDBXReader::getStreamStart() {
+    // check map data contains
+    HeaderMap::iterator itr = mHeaderMap.find(KDBX_HEADER_STREAM_START_BYTES);
+    if(itr == mHeaderMap.end()) {
+        return vector<char>();
+    }
+    // return copy of seed directly
+    return itr->second;
+}
+
+bool KDBXReader::generateMasterKey(const string& password, const string& keyFileName) {
+    return generateMasterKey(password, keyFileName, mMasterKey);
+}
+
+bool KDBXReader::decryptBody(vector<char>& bodyAfter) {
+    // First read body(rest after header) as vector
+    vector<char> bodyBefore;
+    fseek(mFile, mHeaderLength, SEEK_SET);
+    char c;
+    while(1 == fread(&c, sizeof(char), 1, mFile)) {
+        bodyBefore.push_back(c);
+    }
+    // len(bodyVec) should >= 1
+    if(bodyBefore.empty()) {
+        return false;
+    }
+    // check mMasterKey
+    if(mMasterKey.empty()) {
+        return false;
+    }
+    // check iv
+    vector<char> ivVec = getEncryptionIV();
+    if(ivVec.empty()) {
+        return false;
+    }
+    // decrypt 
+    if(!Crypto::aesCBCDecrypt(mMasterKey, ivVec, bodyBefore, bodyAfter)) {
+        return false;
+    }
+    return true;
+}
+
+bool KDBXReader::verify(const vector<char>& bodyAfter) {
+    // get header verify bytes
+    vector<char> headVec = getStreamStart();
+    if(headVec.empty()) {
+        return false;
+    }
+    // get same length in bodyAfter
+    size_t len = headVec.size();
+    if(bodyAfter.size() < len) {
+        return false;
+    }
+    vector<char> bodyVec(bodyAfter.begin(), bodyAfter.begin() + len);
+    // compare 
+    return headVec == bodyVec;
+}
+
+bool KDBXReader::decrypt(const string& password, const string& keyFileName) {
+    if(!generateMasterKey(password, keyFileName)) {
+        return false;
+    }
+    // decrypt
+    vector<char> bodyAfter;
+    if(!decryptBody(bodyAfter)) {
+        return false;
+    }
+    // unpadding
+    if(!Crypto::aesUnpad(bodyAfter)) {
+        return false;
+    }
+    // verify head
+    if(!verify(bodyAfter)) {
+        return false;
+    }
+    // decompress
+    if(!decompress(bodyAfter)) {
+        return false;
+    }
+    //std::string tmp;
+    //Crypto::digestToHex(bodyAfter, tmp);
+    //printf("%s\n", tmp.c_str());
+    return true;
+}
+
+bool KDBXReader::decompress(vector<char>& data) {
+    // check if need decompress
+    switch(getCompression()) {
+        case NONE:
+        case UNKNOWN:
+            break;
+        case GZIP:
+            return Compress::gunzip(data);
+    }
+    return true;
 }

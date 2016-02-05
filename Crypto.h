@@ -25,6 +25,8 @@ class Crypto {
         static bool aesCBCDecrypt(const vector<char>& key, const vector<char>& iv, const vector<char>& input, vector<char>& output);
         static bool aesCBCDecrypt(const string& key, const string& iv, const vector<char>& input, vector<char>& output);
         static bool aesCBCDecryptHex(const string& key, const string& iv, const string& input, string& output);
+        // aes pad & unpad
+        static bool aesUnpad(vector<char>& data);
 
         // util
         static bool stringToVec(const string& str, vector<char>& vec);

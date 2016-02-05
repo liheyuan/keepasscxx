@@ -8,6 +8,7 @@
 using std::map;
 using std::vector;
 
+// kdbx signature 2
 #define KDBX_SIG2_ARR_LEN  2 
 const uint32_t KDBX_SIG2_ARR[KDBX_SIG2_ARR_LEN] = {0xB54BFB66, 0xB54BFB67};
 
@@ -47,13 +48,27 @@ class KDBXReader: public AbstractKDBReader {
         vector<char> getTransformSeed();
         // get master seed(random every save)
         vector<char> getMasterSeed();
+        // get encryption iv
+        vector<char> getEncryptionIV();
+        // get stream start bytes
+        vector<char> getStreamStart();
 
+        // entry function
+        bool decrypt(const string& password, const string& keyFileName);
         // generate master key
-        bool generateMasterKey(const string& password, const string& fileName, vector<char>& outputVec);
+        bool generateMasterKey(const string& password, const string& keyFileName, vector<char>& outputVec);
+        bool generateMasterKey(const string& password, const string& keyFileName);
+        // check verify
+        bool verify(const vector<char>& bodyAfter);
+        // decrypt body
+        bool decryptBody(vector<char>& bodyAfter); 
+        // decompress if neede
+        bool decompress(vector<char>& data);
 
     protected:
-        typedef map<char, vector<char> > HeaderMap; 
+        typedef map<char, vector<char> > HeaderMap;
         HeaderMap mHeaderMap;
+        vector<char> mMasterKey; // unsafe for now
 }
 ;
 

@@ -241,3 +241,23 @@ bool Crypto::aesCBCDecryptHex(const string& key, const string& iv, const string&
     // convert to hex
     return digestToHex(outputVec, output);
 }
+
+bool Crypto::aesUnpad(vector<char>& data) {
+    // empty vec won't need unpad
+    if(data.empty()) {
+        return false;
+    }
+    // get len
+    size_t padLen = data[data.size() - 1];
+    // not enough data for unpad
+    if(data.size() <= padLen) {
+        return false;
+    }
+    // remove last padLen elements
+    vector<char>::iterator itr = data.end();
+    std::advance(itr, -padLen);
+    data.erase(itr, data.end());
+    return true;
+}
+
+

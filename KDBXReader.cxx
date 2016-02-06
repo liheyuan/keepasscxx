@@ -244,13 +244,13 @@ bool KDBXReader::decrypt(const string& password, const string& keyFileName) {
     if(!verify(bodyAfter)) {
         return false;
     }
+    std::string tmp;
+    Crypto::digestToHex(bodyAfter, tmp);
+    printf("%s\n", tmp.c_str());
     // decompress
     if(!decompress(bodyAfter)) {
         return false;
     }
-    //std::string tmp;
-    //Crypto::digestToHex(bodyAfter, tmp);
-    //printf("%s\n", tmp.c_str());
     return true;
 }
 
@@ -261,8 +261,17 @@ bool KDBXReader::decompress(vector<char>& data) {
         case UNKNOWN:
             break;
         case GZIP:
-            vector<char> output;	
-            //return Compress::gunzip2(data, output);
+            vector<char> output;
+            FILE* fp = fopen("data", "wb");
+            fwrite(data.data(), sizeof(char), data.size(), fp);
+            fclose(fp);
+            if(!Compress::gunzip2(data, output)) {
+                return false;
+            }
+            for(size_t i=0; i<output.size(); i++) {
+                printf("%c", output[i]);
+            }
+            break;
     }
     return true;
 }

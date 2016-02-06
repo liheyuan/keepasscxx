@@ -7,10 +7,10 @@ using std::vector;
 
 class Compress {
     public:
-        //bool gzip(const vector<char>& input, vector<char>& output);
-        //bool gunzip(const vector<char>& input, vector<char>& output);
-        bool gzip2(const vector<char>& input, vector<char>& output);
-        bool gunzip2(const vector<char>& input, vector<char>& output);
+        static bool gzip(vector<char>& data);
+        static bool gunzip(vector<char>& data);
+        static bool gzip2(const vector<char>& input, vector<char>& output);
+        static bool gunzip2(const vector<char>& input, vector<char>& output);
 }
 ;
 

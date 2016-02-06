@@ -4,7 +4,7 @@ CRYPTO_CXX_PREFIX = /usr/
 CC = g++
 LD = g++
 CXXFLAGS := -I. -I /usr/include -I$(CRYPTO_CXX_PREFIX)/include -std=c++0x
-LINKFLAGS := $(CRYPTO_CXX_PREFIX)/lib/libcryptopp.a 
+LINKFLAGS := $(CRYPTO_CXX_PREFIX)/lib/libcryptopp.a -lz 
 #Objects
 OBJS := $(patsubst %.cxx, %.o, $(wildcard *.cxx)) \
         $(patsubst %.cxx, %.o, $(wildcard ./common/*.cxx))

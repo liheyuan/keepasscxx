@@ -1,8 +1,8 @@
 #include "KDBXReader.h"
-#include "Endian.h"
 #include "ConvTool.h"
 #include "Crypto.h"
 #include "Compress.h"
+#include "Endian.h"
 
 KDBXReader::KDBXReader()
 :AbstractKDBReader() {
@@ -261,7 +261,8 @@ bool KDBXReader::decompress(vector<char>& data) {
         case UNKNOWN:
             break;
         case GZIP:
-            return Compress::gunzip(data);
+            vector<char> output;	
+            //return Compress::gunzip2(data, output);
     }
     return true;
 }

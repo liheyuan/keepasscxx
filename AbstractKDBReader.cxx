@@ -1,6 +1,6 @@
 #include "AbstractKDBReader.h"
-#include "Endian.h"
 #include "Crypto.h"
+#include "Endian.h"
 
 AbstractKDBReader::~AbstractKDBReader() {
     if(mFile) {
@@ -8,6 +8,7 @@ AbstractKDBReader::~AbstractKDBReader() {
         mFile = NULL;
     }
 }
+
 bool AbstractKDBReader::open(const string& filename) {
     mFileName.assign(filename);
     // open & test

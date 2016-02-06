@@ -1,8 +1,7 @@
-#ifndef _ENDIAN_H
-#define _ENDIAN_H
+#ifndef _MY_ENDIAN_H
+#define _MY_ENDIAN_H
 
-#include <stdint.h>
-#include "endian.h"
+#include <cstdint>
 
 // See http://stackoverflow.com/questions/2100331/c-macro-definition-to-determine-big-endian-or-little-endian-machine
 class Endian {
@@ -40,26 +39,10 @@ class Endian {
             return (val << 32) | (val >> 32);
         }
     
-        static uint16_t convToLittle(uint16_t val) {
-            if(isBigEndianness()) {
-                val = changeEndianness(val);
-            }
-            return val;
-        }
-    
-        static uint32_t convToLittle(uint32_t val) {
-            if(isBigEndianness()) {
-                val = changeEndianness(val);
-            }
-            return val;
-        }
+        static uint16_t convToLittle(uint16_t val);
+        static uint32_t convToLittle(uint32_t val);
+        static uint32_t convToLittle(uint64_t val);
 
-        static uint32_t convToLittle(uint64_t val) {
-            if(isBigEndianness()) {
-                val = changeEndianness(val);
-            }
-            return val;
-        }
         static uint16_t convToBig(uint16_t val) {
             if(isLittleEndianness()) {
                 val = changeEndianness(val);

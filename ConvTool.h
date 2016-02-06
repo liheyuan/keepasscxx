@@ -1,7 +1,10 @@
 #ifndef _CONV_TOOL
 #define _CONV_TOOL
 
-#include <stdint.h>
+#include <cstdint>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
 
 class ConvTool {
     public:

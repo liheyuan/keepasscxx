@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <vector>
+#include <cstdint>
 
 using std::string;
 using std::vector;

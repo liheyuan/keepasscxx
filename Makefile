@@ -1,9 +1,9 @@
 #Const
-CRYPTO_CXX_PREFIX = /usr/local/Cellar/cryptopp/5.6.2/
+CRYPTO_CXX_PREFIX = /usr/
 #Compiler and flags
 CC = g++
 LD = g++
-CXXFLAGS := -O3 -I /usr/include -I$(CRYPTO_CXX_PREFIX)/include
+CXXFLAGS := -I. -I /usr/include -I$(CRYPTO_CXX_PREFIX)/include -std=c++0x
 LINKFLAGS := $(CRYPTO_CXX_PREFIX)/lib/libcryptopp.a 
 #Objects
 OBJS := $(patsubst %.cxx, %.o, $(wildcard *.cxx)) \

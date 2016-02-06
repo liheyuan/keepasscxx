@@ -2,6 +2,7 @@
 // #include <zlib/zlib.h>
 #include "Compress.h"
 
+/*
 bool Compress::gzip(vector<char>& data) {
     // get gzipper
     CryptoPP::Gzip zipper;
@@ -40,6 +41,7 @@ bool Compress::gunzip(vector<char>& data) {
         return false;
     }
 }
+*/
 
 bool Compress::gzip2(const vector<char>& input, vector<char>& output) {
     return true;

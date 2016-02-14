@@ -1,5 +1,6 @@
 #Const
-CRYPTO_CXX_PREFIX = /usr/
+#CRYPTO_CXX_PREFIX = /usr/
+CRYPTO_CXX_PREFIX = /usr/local/Cellar/cryptopp/5.6.2
 #Compiler and flags
 CC = g++
 LD = g++

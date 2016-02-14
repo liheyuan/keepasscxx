@@ -49,45 +49,50 @@ bool Compress::gzip2(const vector<char>& input, vector<char>& output) {
     strm.zfree  = Z_NULL;
     strm.opaque = Z_NULL;
     strm.next_in = (Byte*)&input[0];
-    strm.avail_in = input.size();
-    if(deflateInit2(&strm, 9, Z_DEFLATED,
-                31, 8,
+    if(deflateInit2(&strm, 6, Z_DEFLATED,
+                MAX_WBITS + 16, 8,
                 Z_DEFAULT_STRATEGY) != Z_OK) {
         return false;
     }
     // compress
     output.clear();
-    const size_t CHUNK = 0x4000; // zlib default
+    const size_t CHUNK = 16384; // zlib default
     char* buf = new char[CHUNK + 1];
-    int err;
-    bool haveErr = false;
+    int ret;
+    size_t remain = input.size();
+    int flush_flag = 0;
     do {
-        size_t have;
+        // set in
+        if(remain < CHUNK) {
+            strm.avail_in = remain;
+            flush_flag = Z_FINISH;
+        } else {
+            strm.avail_in = CHUNK;
+            flush_flag = Z_NO_FLUSH;
+        }
+        remain -= strm.avail_in;
+        // set out
         strm.avail_out = CHUNK;
         strm.next_out = (Byte*)buf;
-        err = deflate (& strm, Z_FINISH);
-        if(err == Z_OK || err == Z_STREAM_END) {
+        // do compress
+        ret = deflate (& strm, flush_flag);
+        if(ret != Z_STREAM_ERROR) {
+            size_t have;
             have = CHUNK - strm.avail_out;
-            printf("%ld\n", have);
+            // printf("%ld\n", have);
             if(have > 0) {
                 output.insert(output.end(), buf, buf + have);
             }
         }else {
-            haveErr = true;
-            printf("have err %d\n", err);
-            break;
+            deflateEnd(& strm);
+            clearBuf(buf);
+            return false;
         }
     }
-    while (strm.avail_out == 0);
+    while (flush_flag != Z_FINISH);
     deflateEnd(& strm);
-    if(buf) {
-        delete [] buf;
-        buf = NULL;
-    }
-    if(haveErr) {
-        return false;
-    }
-    return true;
+    clearBuf(buf);
+    return ret == Z_STREAM_END;
 }
 
 bool Compress::gunzip2(const vector<char>& input, vector<char>& output) {
@@ -102,53 +107,54 @@ bool Compress::gunzip2(const vector<char>& input, vector<char>& output) {
         return false;
     }
     // small buf
+    const size_t READ_BATCH = 16;
     const size_t CHUNK = 512;
     char* buf = new char[CHUNK];
     // decompress
     output.clear();
+    int ret = 0;
     size_t remain = input.size();
-    int err;
-    const size_t READ_BATCH = 16;
-    bool haveErr = false;
-    while(true) {
-        // set next read batch
-        strm.avail_in = READ_BATCH;
+    do {
         if(remain < READ_BATCH) {
             strm.avail_in = remain;
+        } else {
+            strm.avail_in = READ_BATCH;
         }
-        // read until have out
-        do {
-            strm.next_out = (Byte*)buf;
-            strm.avail_out = CHUNK;
-            err = inflate (&strm, Z_NO_FLUSH);
-            if(err == Z_OK) {
-                size_t have = CHUNK - strm.avail_out;
-                // printf("have %ld\n", have);
-                if( have > 0 ) {
-                    output.insert(output.end(), buf, buf + have);
-                }
-                remain -= 1;
-            } else if(err == Z_STREAM_END) {
-                remain = 0;
-                break;
-            } else {
-                return false;
-            }
-        }
-        while (strm.avail_out == 0 && remain > 0 && !haveErr);
-        // check if should end or have err
-        if(remain == 0 || haveErr) {
-            inflateEnd (& strm);
+        if(strm.avail_in == 0) {
             break;
         }
-    }
+
+        do {
+            strm.avail_out = CHUNK;
+            strm.next_out = (Byte*)buf;
+            ret = inflate(&strm, Z_NO_FLUSH);
+            switch(ret) {
+                case Z_NEED_DICT:
+                ret = Z_DATA_ERROR;
+                case Z_DATA_ERROR:
+                case Z_MEM_ERROR:
+                    inflateEnd(&strm);
+                    clearBuf(buf);
+                    return false;
+            }
+            size_t have = CHUNK - strm.avail_out;
+            // printf("have %ld\n", have);
+            if( have > 0 ) {
+                output.insert(output.end(), buf, buf + have);
+            }
+        } while (strm.avail_out == 0);
+
+        remain -= strm.avail_in;
+    } while (ret != Z_STREAM_END);
     // clean buf
-    if(buf != NULL) {
+    clearBuf(buf);
+    inflateEnd (& strm);
+    return ret == Z_STREAM_END;
+}
+
+void Compress::clearBuf(char*& buf) {
+    if(buf) {
         delete [] buf;
         buf = NULL;
     }
-    if(haveErr) {
-        return false;
-    }
-    return true;
 }

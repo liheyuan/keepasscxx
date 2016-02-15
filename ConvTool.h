@@ -18,6 +18,17 @@ class ConvTool {
             return true;
         }
 
+        static bool charToU32(const char* p, uint32_t& val) {
+            if(!p) {
+                return false;
+            }
+            val = (((unsigned char)p[3] << 24) |
+             ((unsigned char)p[2] << 16) |
+             ((unsigned char)p[1] << 8) |
+             (unsigned char)p[0]);
+            return true;
+        }
+
         static bool vecToU32(const vector<char>& vec, uint32_t& val) {
             if(vec.size() != 4) {
                 return false;

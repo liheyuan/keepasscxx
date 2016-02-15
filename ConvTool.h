@@ -6,6 +6,8 @@
 #include <cstdio>
 #include <cstring>
 
+#include "Endian.h"
+
 class ConvTool {
     public:
 
@@ -47,6 +49,34 @@ class ConvTool {
             memcpy(&val, &vec[0], sizeof(uint64_t));
             return true;
         }
+
+        static bool U32ToVecReverse(const uint32_t val, vector<char>& vec) {
+            vec.clear();
+            vec.push_back(val & 0xFF);
+            vec.push_back((val >> 8) & 0xFF);
+            vec.push_back((val >> 16) & 0xFF);
+            vec.push_back((val >> 24) & 0xFF);
+            return true;
+        }
+
+        /*
+        static bool U32ToVecNorm(const uint32_t val, vector<char>& vec) {
+            vec.clear();
+            vec.push_back((val >> 24) & 0xFF);
+            vec.push_back((val >> 16) & 0xFF);
+            vec.push_back((val >> 8) & 0xFF);
+            vec.push_back(val & 0xFF);
+            return true;
+        }
+
+        static bool U32ToVecLittle(const uint32_t val, vector<char>& vec) {
+            if(Endian::isLittleEndianness()) {
+                return U32ToVecReverse(val, vec);
+            } else {
+                return U32ToVecNorm(val, vec);
+            }
+        }
+        */
 }
 ;
 

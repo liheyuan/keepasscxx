@@ -4,25 +4,29 @@
 #include "Crypto.h"
 
 HashBlockIO::HashBlockIO()
-:mSrcData(NULL), mSrcLen(0), mSrcPos(0), mMode(0){
+:mSrcData(NULL), mSrcLen(0), mSrcPos(0), mMode(0), mWriteIndex(0){
 }
 
-void HashBlockIO::init(char* data, size_t len, int mode) {
+void HashBlockIO::init(char* data, uint32_t len, int mode) {
     mSrcData = data;
     mSrcLen = len;
     mSrcPos = 0;
     mMode = mode;
 }
 
-void HashBlockIO::initRead(char* data, size_t len) {
+void HashBlockIO::initRead(char* data, uint32_t len) {
     init(data, len, HASH_BLOCK_READ);
 }
 
-void HashBlockIO::initWrite(char* data, size_t len) {
+void HashBlockIO::initWrite(char* data, uint32_t len) {
     init(data, len, HASH_BLOCK_WRITE);
 }
 
 bool HashBlockIO::readBlock(vector<char>& output) {
+    // check mode
+    if(mMode != HASH_BLOCK_READ) {
+        return false;
+    }
     // clear output
     output.clear();
     // check if have enough len for 4 + 32 + 4 = 40 Bytes
@@ -88,7 +92,64 @@ bool HashBlockIO::readBlock(vector<char>& output) {
     }
 }
 
-bool HashBlockIO::enough(size_t len) {
+bool HashBlockIO::writeBlock(vector<char>& output, uint32_t blockSize) {
+    output.clear();
+    if(mMode != HASH_BLOCK_WRITE) {
+        return false;
+    }
+    // judge if have enough data
+    if(!enough(1)) {
+        return false;
+    } else {
+        if(mSrcPos >= mSrcLen) {
+            return false;
+        }
+        // check cur block size
+        uint32_t len = mSrcLen - mSrcPos;
+        if(len > blockSize) {
+            len = blockSize;
+        }
+        // write index
+        vector<char> tmp;
+        ConvTool::U32ToVecReverse(mWriteIndex++, tmp);
+        output.insert(output.end(), tmp.begin(), tmp.end());
+        // prepare data & calculate hash
+        char* p = getSrcCur();
+        if(!p) {
+            return false;
+        }
+        vector<char> data(p, p+len);
+        vector<char> hash;
+        if(!Crypto::sha256(data, hash)) {
+            return false;
+        }
+        // write hash
+        output.insert(output.end(), hash.begin(), hash.end());
+        // write len
+        ConvTool::U32ToVecReverse(len, tmp);
+        output.insert(output.end(), tmp.begin(), tmp.end());
+        // write data
+        output.insert(output.end(), data.begin(), data.end());
+        incSrcPos(len);
+        // check if finished
+        if(!enough(1)) {
+            // index 
+            ConvTool::U32ToVecReverse(mWriteIndex++, tmp);
+            output.insert(output.end(), tmp.begin(), tmp.end());
+            // hash 32 * 0
+            for(size_t i=0; i<32; i++) {
+                output.push_back(0);
+            }
+            // len = 0
+            uint32_t lenTmp = 0;
+            ConvTool::U32ToVecReverse(lenTmp, tmp);
+            output.insert(output.end(), tmp.begin(), tmp.end());
+        }
+        return true;
+    }
+}
+
+bool HashBlockIO::enough(uint32_t len) {
     if(mSrcPos < mSrcLen && mSrcLen - mSrcPos >= len) {
         return true;
     } else {
@@ -104,6 +165,6 @@ char* HashBlockIO::getSrcCur() {
     }
 }
 
-void HashBlockIO::incSrcPos(size_t add) {
+void HashBlockIO::incSrcPos(uint32_t add) {
     mSrcPos += add;
 }

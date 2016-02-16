@@ -3,6 +3,7 @@
 #include <cryptopp/aes.h>
 #include <cryptopp/modes.h>
 #include <cryptopp/salsa.h>
+#include <cryptopp/base64.h>
 #include "Crypto.h"
 
 bool Crypto::sha256(const vector<char> &input, vector<char>& output) {
@@ -54,7 +55,7 @@ bool Crypto::hexToDigest(const string& input, vector<char>& output) {
     decoder.MessageEnd();
 
     size_t len = decoder.MaxRetrievable();
-    if(len > 0 && len < 1024 * 1024) {
+    if(len > 0 && len < CRYPTO_SIZE_MAX) {
         output.resize(len);
         output.resize(len);
         decoder.Get((byte*)output.data(), output.size());
@@ -289,7 +290,6 @@ bool Crypto::salsa20Decrypt(const vector<char>& key, const vector<char>& iv, con
     return true;
 }
 
-
 bool Crypto::salsa20Encrypt(const vector<char>& key, const vector<char>& iv, const vector<char>& input, vector<char>& output) {
     // Encrypt
     const byte* pKey = reinterpret_cast<const byte*>(&key[0]);
@@ -300,4 +300,39 @@ bool Crypto::salsa20Encrypt(const vector<char>& key, const vector<char>& iv, con
     d.ProcessData(pTmp, pTmp, sizeof(char) * tmpVec.size());
     output.assign(tmpVec.begin(), tmpVec.end());
     return true;
+}
+
+bool Crypto::base64Encode(const vector<char>& input, vector<char>& output) {
+    CryptoPP::Base64Encoder encoder;
+
+    encoder.Put((byte*)input.data(), input.size()); 
+    encoder.MessageEnd();
+
+    output.clear();
+    size_t len = encoder.MaxRetrievable();
+    if(len > 0 && len < CRYPTO_SIZE_MAX) {
+        output.resize(len);
+        encoder.Get((byte*)output.data(), output.size());
+        return true;
+    }
+
+    return false;
+
+}
+
+bool Crypto::base64Decode(const vector<char>& input, vector<char>& output) {
+    CryptoPP::Base64Decoder decoder;
+
+    decoder.Put((byte*)input.data(), input.size()); 
+    decoder.MessageEnd();
+
+    output.clear();
+    size_t len = decoder.MaxRetrievable();
+    if(len > 0 && len < CRYPTO_SIZE_MAX) {
+        output.resize(len);
+        decoder.Get((byte*)output.data(), output.size());
+        return true;
+    }
+
+    return false;
 }

@@ -3,6 +3,7 @@
 #include "Crypto.h"
 #include "Compress.h"
 #include "Endian.h"
+#include "HashBlockIO.h"
 
 KDBXReader::KDBXReader()
 :AbstractKDBReader() {
@@ -211,7 +212,7 @@ bool KDBXReader::decryptBody(vector<char>& bodyAfter) {
     return true;
 }
 
-bool KDBXReader::verify(const vector<char>& bodyAfter) {
+bool KDBXReader::verifyAndTrim(vector<char>& bodyAfter) {
     // get header verify bytes
     vector<char> headVec = getStreamStart();
     if(headVec.empty()) {
@@ -224,10 +225,15 @@ bool KDBXReader::verify(const vector<char>& bodyAfter) {
     }
     vector<char> bodyVec(bodyAfter.begin(), bodyAfter.begin() + len);
     // compare 
-    return headVec == bodyVec;
+    if(headVec != bodyVec) {
+        return false;
+    } else {
+        bodyAfter.erase(bodyAfter.begin(), bodyAfter.begin() + len);
+        return true;
+    }
 }
 
-bool KDBXReader::decrypt(const string& password, const string& keyFileName) {
+bool KDBXReader::decrypt(const string& password, const string& keyFileName, vector<char>& output) {
     if(!generateMasterKey(password, keyFileName)) {
         return false;
     }
@@ -241,37 +247,61 @@ bool KDBXReader::decrypt(const string& password, const string& keyFileName) {
         return false;
     }
     // verify head
-    if(!verify(bodyAfter)) {
+    if(!verifyAndTrim(bodyAfter)) {
         return false;
     }
-    std::string tmp;
-    Crypto::digestToHex(bodyAfter, tmp);
-    printf("%s\n", tmp.c_str());
+    vector<char> compressData;
+    if(!removeBlock(bodyAfter, compressData)) {
+        return false;
+    }
     // decompress
-    if(!decompress(bodyAfter)) {
+    if(!decompress(compressData, output)) {
         return false;
     }
     return true;
 }
 
-bool KDBXReader::decompress(vector<char>& data) {
+bool KDBXReader::removeBlock(const vector<char>& input, vector<char>& output) {
+    HashBlockIO hbio;
+    hbio.initRead((char*)input.data(), input.size());
+    vector<char> tmpVec;
+    output.clear();
+    while(hbio.readBlock(tmpVec)) {
+        output.insert(output.end(), tmpVec.begin(), tmpVec.end());
+    }
+    return output.size() > 0;
+}
+
+bool KDBXReader::decompress(const vector<char>& data, vector<char>& output) {
     // check if need decompress
     switch(getCompression()) {
         case NONE:
         case UNKNOWN:
             break;
         case GZIP:
-            vector<char> output;
-            FILE* fp = fopen("data", "wb");
-            fwrite(data.data(), sizeof(char), data.size(), fp);
-            fclose(fp);
+            //FILE* fp = fopen("data", "wb");
+            //fwrite(data.data(), sizeof(char), data.size(), fp);
+            //fclose(fp);
+            output.clear();
             if(!Compress::gunzip2(data, output)) {
                 return false;
             }
-            for(size_t i=0; i<output.size(); i++) {
-                printf("%c", output[i]);
-            }
+            //for(size_t i=0; i<output.size(); i++) {
+            //    printf("%c", output[i]);
+            //}
+            //printf("\n");
             break;
     }
     return true;
+}
+
+
+vector<char> KDBXReader::getProtectedStreamKey() {
+    // check map data contains
+    HeaderMap::iterator itr = mHeaderMap.find(KDBX_HEADER_PROTECTED_STREAM_KEY);
+    if(itr == mHeaderMap.end()) {
+        return vector<char>();
+    }
+    // return copy of seed directly
+    return itr->second;
 }

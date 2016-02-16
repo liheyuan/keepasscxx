@@ -28,9 +28,13 @@ class Crypto {
         static bool aesCBCDecryptHex(const string& key, const string& iv, const string& input, string& output);
         // aes pad & unpad
         static bool aesUnpad(vector<char>& data);
+        // salsa20 encrypt && decrypt
+        static bool salsa20Decrypt(const vector<char>& key, const vector<char>& iv, const vector<char>& input, vector<char>& output);
+        static bool salsa20Encrypt(const vector<char>& key, const vector<char>& iv, const vector<char>& input, vector<char>& output);
 
         // util
         static bool stringToVec(const string& str, vector<char>& vec);
+        static bool hexToDigest(const string& intput, vector<char>& output);
         static bool digestToHex(const vector<char>& input, string& output);
 }
 ;

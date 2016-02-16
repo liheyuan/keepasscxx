@@ -52,18 +52,22 @@ class KDBXReader: public AbstractKDBReader {
         vector<char> getEncryptionIV();
         // get stream start bytes
         vector<char> getStreamStart();
+        // get protect stream key 
+        vector<char> getProtectedStreamKey();
 
-        // entry function
-        bool decrypt(const string& password, const string& keyFileName);
+        // from file to xml
+        bool decrypt(const string& password, const string& keyFileName, vector<char>& output);
         // generate master key
         bool generateMasterKey(const string& password, const string& keyFileName, vector<char>& outputVec);
         bool generateMasterKey(const string& password, const string& keyFileName);
         // check verify
-        bool verify(const vector<char>& bodyAfter);
+        bool verifyAndTrim(vector<char>& bodyAfter);
         // decrypt body
         bool decryptBody(vector<char>& bodyAfter); 
+        // concat each block
+        bool removeBlock(const vector<char>& input, vector<char>& output);
         // decompress if neede
-        bool decompress(vector<char>& data);
+        bool decompress(const vector<char>& data, vector<char>& output);
 
     protected:
         typedef map<char, vector<char> > HeaderMap;

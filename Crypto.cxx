@@ -2,6 +2,7 @@
 #include <cryptopp/hex.h>
 #include <cryptopp/aes.h>
 #include <cryptopp/modes.h>
+#include <cryptopp/salsa.h>
 #include "Crypto.h"
 
 bool Crypto::sha256(const vector<char> &input, vector<char>& output) {
@@ -44,6 +45,22 @@ bool Crypto::sha256Hex(const string &input, string& output) {
 bool Crypto::stringToVec(const string& str, vector<char>& vec) {
     std::copy( str.begin(), str.end(), std::back_inserter(vec));
     return true;
+}
+
+bool Crypto::hexToDigest(const string& input, vector<char>& output) {
+    output.clear(); 
+    CryptoPP::HexDecoder decoder;
+    decoder.Put( (byte*)input.data(), input.size() );
+    decoder.MessageEnd();
+
+    size_t len = decoder.MaxRetrievable();
+    if(len > 0 && len < 1024 * 1024) {
+        output.resize(len);
+        output.resize(len);
+        decoder.Get((byte*)output.data(), output.size());
+        return true;
+    }
+    return false;
 }
 
 bool Crypto::digestToHex(const vector<char>& input, string& output) {
@@ -260,4 +277,27 @@ bool Crypto::aesUnpad(vector<char>& data) {
     return true;
 }
 
+bool Crypto::salsa20Decrypt(const vector<char>& key, const vector<char>& iv, const vector<char>& input, vector<char>& output) {
+    // Decrypt
+    const byte* pKey = reinterpret_cast<const byte*>(&key[0]);
+    const byte* pIv = reinterpret_cast<const byte*>(&iv[0]);
+    CryptoPP::Salsa20::Decryption d(pKey, key.size() * sizeof(char), pIv);
+    vector<char> tmpVec(input.begin(), input.end());
+    byte* pTmp = reinterpret_cast<byte*>(&tmpVec[0]);
+    d.ProcessData(pTmp, pTmp, sizeof(char) * tmpVec.size());
+    output.assign(tmpVec.begin(), tmpVec.end());
+    return true;
+}
 
+
+bool Crypto::salsa20Encrypt(const vector<char>& key, const vector<char>& iv, const vector<char>& input, vector<char>& output) {
+    // Encrypt
+    const byte* pKey = reinterpret_cast<const byte*>(&key[0]);
+    const byte* pIv = reinterpret_cast<const byte*>(&iv[0]);
+    CryptoPP::Salsa20::Encryption d(pKey, key.size() * sizeof(char), pIv);
+    vector<char> tmpVec(input.begin(), input.end());
+    byte* pTmp = reinterpret_cast<byte*>(&tmpVec[0]);
+    d.ProcessData(pTmp, pTmp, sizeof(char) * tmpVec.size());
+    output.assign(tmpVec.begin(), tmpVec.end());
+    return true;
+}

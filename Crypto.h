@@ -43,9 +43,11 @@ class Crypto {
         static bool base64Decode(const vector<char>& input, vector<char>& output);
 
         // util
+        static bool vecToString(const vector<char>& vec, string& str);
         static bool stringToVec(const string& str, vector<char>& vec);
         static bool hexToDigest(const string& intput, vector<char>& output);
         static bool digestToHex(const vector<char>& input, string& output);
+        static bool xorVec(const vector<char>& aVec, const vector<char>& bVec, vector<char>& output);
 }
 ;
 

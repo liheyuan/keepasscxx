@@ -336,3 +336,24 @@ bool Crypto::base64Decode(const vector<char>& input, vector<char>& output) {
 
     return false;
 }
+
+bool Crypto::vecToString(const vector<char>& vec, string& str) {
+    str.assign(vec.begin(), vec.end());
+    return true;
+}
+
+bool Crypto::xorVec(const vector<char>& aVec, const vector<char>& bVec, vector<char>& output) {
+    // check size equals
+    if(aVec.size() != bVec.size()) {
+        printf("%d %d", aVec.size(), bVec.size());
+        return false;
+    }
+    // xor each
+    output.clear();
+    for(size_t i=0; i<aVec.size(); i++) {
+        uint8_t a = aVec[i];
+        uint8_t b = bVec[i];
+        output.push_back(b^a);
+    }
+    return true;
+}

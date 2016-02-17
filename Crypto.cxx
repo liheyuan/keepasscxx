@@ -345,7 +345,6 @@ bool Crypto::vecToString(const vector<char>& vec, string& str) {
 bool Crypto::xorVec(const vector<char>& aVec, const vector<char>& bVec, vector<char>& output) {
     // check size equals
     if(aVec.size() != bVec.size()) {
-        printf("%d %d", aVec.size(), bVec.size());
         return false;
     }
     // xor each

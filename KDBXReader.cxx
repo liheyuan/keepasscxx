@@ -295,7 +295,6 @@ bool KDBXReader::decompress(const vector<char>& data, vector<char>& output) {
     return true;
 }
 
-
 vector<char> KDBXReader::getProtectedStreamKey() {
     // check map data contains
     HeaderMap::iterator itr = mHeaderMap.find(KDBX_HEADER_PROTECTED_STREAM_KEY);
@@ -304,4 +303,70 @@ vector<char> KDBXReader::getProtectedStreamKey() {
     }
     // return copy of seed directly
     return itr->second;
+}
+
+bool KDBXReader::unprotect(const string& input, string& output) {
+    
+    // get data in vector
+    vector<char> inputVec;
+    if(!Crypto::stringToVec(input, inputVec)) {
+        return false;
+    }
+    // base64decode
+    vector<char> inputNo64Vec;
+    if(!Crypto::base64Decode(inputVec, inputNo64Vec)) {
+        return false;
+    }
+    // get next salsa20 vec 
+    vector<char> salsa20Vec;
+    if(!getSalsa20ArrByLen(inputNo64Vec.size(), salsa20Vec)) {
+        return false;
+    }
+   
+    // xor 
+    vector<char> finalVec;
+    if(!Crypto::xorVec(inputNo64Vec, salsa20Vec, finalVec)) {
+        return false;
+    }
+
+    // convert to string
+    return Crypto::vecToString(finalVec, output);
+}
+
+bool KDBXReader::getSalsa20ArrByLen(size_t len, vector<char>& output) {
+    // get stream key
+    vector<char> streamKey = getProtectedStreamKey();
+    // sha256(stream key)
+    vector<char> streamKeySha256;
+    if(!Crypto::sha256(streamKey, streamKeySha256)) {
+        return false;
+    }
+    // get stream iv
+    vector<char> streamIV;
+    for(size_t i=0; i<KDBX_STREAM_IV_LEN; i++) {
+        streamIV.push_back(KDBX_STREAM_IV[i]);
+    }
+    // extend salsa20 buf if not enough
+    vector<char> vecb64(64, 0);
+    while(mSalsa20Arr.size() < len) {
+        vector<char> tmpVec;
+        if(!Crypto::salsa20Encrypt(streamKeySha256, streamIV, vecb64, tmpVec)) {
+            return false;
+        }
+        mSalsa20Arr.insert(mSalsa20Arr.end(), tmpVec.begin(), tmpVec.end());
+    }
+
+    if(mSalsa20Arr.size() >= len) {
+        // return salsa20Buf
+        output.assign(mSalsa20Arr.begin(), mSalsa20Arr.begin() + len);
+        // clear used buf
+        mSalsa20Arr.erase(mSalsa20Arr.begin(), mSalsa20Arr.begin() + len);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void KDBXReader::clearSalsa20Arr() {
+    mSalsa20Arr.clear();
 }

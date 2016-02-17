@@ -11,6 +11,8 @@ using std::vector;
 // kdbx signature 2
 #define KDBX_SIG2_ARR_LEN  2 
 const uint32_t KDBX_SIG2_ARR[KDBX_SIG2_ARR_LEN] = {0xB54BFB66, 0xB54BFB67};
+#define KDBX_STREAM_IV_LEN 8
+const uint8_t KDBX_STREAM_IV[KDBX_STREAM_IV_LEN] = {0xE8, 0x30, 0x09, 0x4B, 0x97, 0x20, 0x5D, 0x2A};
 
 // header field const
 const char KDBX_HEADER_BEGIN = 0;
@@ -68,11 +70,19 @@ class KDBXReader: public AbstractKDBReader {
         bool removeBlock(const vector<char>& input, vector<char>& output);
         // decompress if neede
         bool decompress(const vector<char>& data, vector<char>& output);
+        // unprotect against salsa20 (assume password must be string)
+        bool unprotect(const string& input, string& output);
+    private:
+        // generate salsa buf if not enough and return first len of buf
+        bool getSalsa20ArrByLen(size_t len, vector<char>& output);
+        // clear salsa20 arr (should be called after each open)
+        void clearSalsa20Arr();
 
     protected:
         typedef map<char, vector<char> > HeaderMap;
         HeaderMap mHeaderMap;
         vector<char> mMasterKey; // unsafe for now
+        vector<char> mSalsa20Arr; // for protect / unprotect
 }
 ;
 
